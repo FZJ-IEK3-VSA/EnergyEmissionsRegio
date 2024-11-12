@@ -1,0 +1,67 @@
+SHP_PATH = r"C:\Users\s.patil\OneDrive - Forschungszentrum Jülich GmbH\Documents\code\ETHOS.RegionData\data\input\02_processed\shapefiles"
+
+DATA_PATH = r"C:\Users\s.patil\OneDrive - Forschungszentrum Jülich GmbH\Documents\code\ETHOS.RegionData\data\input\03_imported\collected_data"
+RAW_DATA_PATH = r"C:\Users\s.patil\OneDrive - Forschungszentrum Jülich GmbH\Documents\code\ETHOS.RegionData\data\input\01_raw"
+
+CLIMATE_DATA_PATH = r"C:\Users\s.patil\OneDrive - Forschungszentrum Jülich GmbH\Documents\code\ETHOS.RegionData\data\input\03_imported\climate_projections"
+
+units = {
+    "de_employment_in_agriculture": "number",
+    "es_utilized_agricultural_area": "square kilometer",
+    "de_employment_in_textile_and_leather_manufacturing": "number",
+    "industrial_or_commercial_units_cover": "square kilometer",
+    "de_employment_in_food_and_beverage_manufacturing": "number",
+    "de_employment_in_mechanical_and_automotive_engineering": "number",
+    "de_employment_in_mechatronics_energy_and_electrical": "number",
+    "de_employment_in_wood_processing": "number",
+    "employment_in_construction": "number",
+    "construction_sites_cover": "square kilometer",
+    "road_transport_of_freight": "Mt",
+    "road_network": "kilometer",
+    "population": "number",
+    "de_number_of_passenger_cars_emission_group_euro_1": "number",
+    "de_number_of_passenger_cars_emission_group_euro_2": "number",
+    "de_number_of_passenger_cars_emission_group_euro_3": "number",
+    "de_number_of_passenger_cars_emission_group_euro_4": "number",
+    "de_number_of_passenger_cars_emission_group_euro_5": "number",
+    "de_number_of_passenger_cars_emission_group_euro_6r": "number",
+    "de_number_of_passenger_cars_emission_group_euro_6dt": "number",
+    "de_number_of_passenger_cars_emission_group_euro_6d": "number",
+    "de_number_of_passenger_cars_emission_group_euro_other": "number",
+    "de_residential_building_living_area": "square kilometer",
+    "de_non_residential_building_living_area": "square kilometer",
+    "employment_in_agriculture_forestry_and_fishing": "number",
+    "number_of_cattle": "number",
+    "number_of_pigs": "number",
+    "number_of_buffaloes": "number",
+    "agro_forestry_areas_cover": "square kilometer",
+    "water_bodies_cover": "square kilometer",
+    "water_courses_cover": "square kilometer",
+    "number_of_motorcycles": "number",
+    "air_transport_of_freight": "Mt",
+    "airports_cover": "square kilometer",
+    "air_transport_of_passengers": "number",
+    "ghg_emissions_from_fc_in_manufacture_of_iron_and_steel": "Mt",
+    "number_of_iron_and_steel_industries": "number",
+    "number_of_refineries": "number",
+    "ghg_emissions_from_fc_in_manufacture_of_non_ferrous_metals": "Mt",
+    "number_of_non_ferrous_metals_industries": "number",
+    "ghg_emissions_from_fc_in_manufacture_of_chemicals": "Mt",
+    "number_of_chemical_industries": "number",
+    "ghg_emissions_from_fc_in_manufacture_of_non_metallic_mineral_products": "Mt",
+    "number_of_non_metallic_minerals_industries": "number",
+    "ghg_emissions_from_fc_in_manufacture_of_pulp_paper_and_printing": "Mt",
+    "number_of_paper_and_printing_industries": "number",
+    "port_areas_cover": "square kilometer",
+    "cproj_annual_mean_temperature_heating_degree_days": "heating_degree_days",
+    "railway_network": "kilometer",
+    "mineral_extraction_sites_cover": "square kilometer",
+}
+
+confidence_level_mapping = {
+    1: "VERY LOW",
+    2: "LOW",
+    3: "MEDIUM",
+    4: "HIGH",
+    5: "VERY HIGH",
+}
