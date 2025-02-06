@@ -3,7 +3,6 @@ import re
 import warnings
 import numpy as np
 import pandas as pd
-from copy import deepcopy
 
 
 def is_float(s):
@@ -18,69 +17,6 @@ def is_float(s):
 char_dict = {"NUTS3": 5, "NUTS2": 4, "NUTS1": 3, "NUTS0": 2}
 
 
-def solve_dfs(df_1: pd.DataFrame, df_2: pd.DataFrame, operator: str) -> pd.DataFrame:
-    """
-    Performs arithmetic operations on the 'value' columns of `df_1` and `df_2`.
-
-    :param df_1: Dataframe containing a 'value' column
-    :type df_1: pd.DataFrame
-
-    :param df_2: Dataframe containing a 'value' column
-    :type df_2: pd.DataFrame
-
-    :param operator: Indicates the operation to be performed
-    :type operator: str
-
-    :returns: final_df
-    :rtype: pd.DataFrame
-    """
-
-    result = pd.merge(
-        df_1,
-        df_2,
-        on=["region_code"],
-        how="inner",
-    )
-
-    result["value_x"].replace([np.inf, np.nan], 0, inplace=True)
-    result["value_y"].replace([np.inf, np.nan], 0, inplace=True)
-
-    if operator == "+":
-        result["value"] = result["value_x"] + result["value_y"]
-
-    elif operator == "/":
-        result["value"] = result["value_x"] / result["value_y"]
-
-        # NOTE: there are some 0s in the data that lead to NAs/infinity in the calculation due to divide by 0 problem
-        # for now these are set to 0
-        if np.isinf(result["value"].values).any() or result["value"].isna().any():
-            warnings.warn("INFs/NAs present in calculated data. These are set to 0")
-            result["value"].replace([np.inf, np.nan], 0, inplace=True)
-
-    elif operator == "*":
-        result["value"] = result["value_x"].mul(result["value_y"])
-
-    else:
-        raise ValueError("Unknown operation")
-
-    # take minimum of two value_confidence_level
-    result["value_confidence_level"] = result[
-        ["value_confidence_level_x", "value_confidence_level_y"]
-    ].min(axis=1)
-
-    result.drop(
-        columns=[
-            "value_x",
-            "value_y",
-            "value_confidence_level_x",
-            "value_confidence_level_y",
-        ],
-        inplace=True,
-    )
-
-    return result
-
-
 def get_proxy_var_list(proxy_equation: str) -> List[str]:
     """
     Splits the `proxy_equation` to get a list of proxy vars.
@@ -91,17 +27,19 @@ def get_proxy_var_list(proxy_equation: str) -> List[str]:
     :returns: proxy_vars
     :rtype: list
     """
-    proxy_equation = "".join(proxy_equation.split())
-
-    pattern = r"[\+\*\|\-\/]"
+    operators = r"[\+\-\*\%\(\)\/\n]"
 
     # Splitting the string using the defined pattern
-    split_result = re.split(pattern, proxy_equation)
+    split_result = re.split(operators, proxy_equation)
 
     # Filtering out empty strings and digits
-    proxy_vars = [item for item in split_result if item and not is_float(item)]
+    var_list = [
+        part.strip()
+        for part in split_result
+        if part.strip() and not part.strip().isdigit() and not is_float(part.strip())
+    ]
 
-    return proxy_vars
+    return var_list
 
 
 def solve_proxy_equation(
@@ -110,15 +48,6 @@ def solve_proxy_equation(
     """
     Performs the arithmetic operations specified in the `equation` on the 'value'
     column in the dataframe contained in `proxy_data_dict`.
-
-    .. note::
-        Currently covers the following cases:
-        0. simple proxy: var_1
-        1. several proxies added without weighting: var_1 + var_2 + var_3 ...
-        2. 1 proxy divided by the other: var_1/var_2
-        3. several proxies added with weighting: 2*var_1 |+ 3*var_2 | .....
-        4. sum of proxies (or divide or multiply two proxies), divided by a proxy: var_1 + var_2 ... |/ var_n
-        5. multiply two proxies: var_1 * var_2
 
     :param equation: String containing the equation.
     :type equation: str
@@ -130,75 +59,42 @@ def solve_proxy_equation(
     :returns: result
     :rtype: pd.DataFrame
     """
+    result = None
 
-    equation = "".join(equation.split())
-
-    # normalise value column before performing arithmetic operations
-    proxy_data_dict_normalized = {}
-    for var_name, data_df in proxy_data_dict.items():
-        _df = data_df.copy()
+    for proxy_var, proxy_data in proxy_data_dict.items():
         # If there is no variance in data, we cannot normailize it. So everything is just set to 0
-        if len(_df["value"].unique()) == 1:
-            _df["value"] = 0
+        if len(proxy_data["value"].unique()) == 1:
+            proxy_data["value"] = 0
         else:
-            _df["value"] = (
-                _df["value"] / _df["value"].max()
+            proxy_data["value"] = (
+                proxy_data["value"] / proxy_data["value"].max()
             )  # normalizing this way to retain true 0s in the normalized data
 
-        proxy_data_dict_normalized[var_name] = _df
+        proxy_data.rename(columns={"value": proxy_var}, inplace=True)
 
-    def _calculate(_eq):
-        if "/" in _eq:
-            [var_1, var_2] = _eq.split("/")
-
-            var_1_df = proxy_data_dict_normalized[var_1]
-            var_2_df = proxy_data_dict_normalized[var_2]
-
-            result = solve_dfs(var_1_df, var_2_df, "/")
-
-        elif "+" in _eq:
-            proxy_vars = _eq.split("+")
-
-            for i, var_name in enumerate(proxy_vars):
-                var_data = proxy_data_dict_normalized[var_name]
-
-                if i == 0:
-                    result = var_data
-
-                else:
-                    result = solve_dfs(result, var_data, "+")
-
-        elif "*" in _eq:
-            [var_1, var_2] = _eq.split("*")
-
-            if is_float(var_1):
-                result = proxy_data_dict_normalized[var_2]
-                result["value"] = result["value"] * float(var_1)
-
-            else:
-                var_1_df = proxy_data_dict_normalized[var_1]
-                var_2_df = proxy_data_dict_normalized[var_2]
-
-                result = solve_dfs(var_1_df, var_2_df, "*")
-
+        if result is None:
+            result = proxy_data
         else:
-            result = proxy_data_dict_normalized[_eq]
+            result = pd.merge(result, proxy_data, on=["region_code"])
 
-        return result
+            # merged value_confidence_level
+            # NOTE: depends on the poorest quality rating, Hence min
+            result["value_confidence_level"] = result[
+                ["value_confidence_level_x", "value_confidence_level_y"]
+            ].min(axis=1)
 
-    eq_parts = equation.split("|")
+            result.drop(
+                columns=[
+                    "value_confidence_level_x",
+                    "value_confidence_level_y",
+                ],
+                inplace=True,
+            )
 
-    for i, eq_part in enumerate(eq_parts):
-        if i == 0:
-            result = _calculate(eq_part)
+    result = result.eval(f"value = {equation}")
+    result["value"] = result["value"].replace([np.inf, np.nan], 0)
 
-        else:
-            operator = eq_part[0]
-            _eq_part = eq_part[1:]
-
-            _result = _calculate(_eq_part)
-
-            result = solve_dfs(result, _result, operator)
+    result = result[["region_code", "value", "value_confidence_level"]].copy()
 
     return result
 

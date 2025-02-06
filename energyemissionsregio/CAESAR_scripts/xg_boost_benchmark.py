@@ -1,15 +1,18 @@
 import os
+import sys
 import pandas as pd
 
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-corr_threshold = 0.5
-var_to_impute = "de_residential_building_living_area"
+# Retrieve the array index passed from the Slurm script
+corr_threshold = float(sys.argv[1])
+
+var_to_impute = "es_utilized_agricultural_area"
 
 print(
-    f"running XGB benchmark with corr: {corr_threshold}, var_to_impute: {var_to_impute}==============================================="
+    f"running XGB with corr: {corr_threshold}, var_to_impute: {var_to_impute}==============================================="
 )
 
 # ===============================================================

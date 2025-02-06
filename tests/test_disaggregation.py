@@ -8,7 +8,7 @@ from energyemissionsregio.disaggregation import (
 
 def test_distribute_data_equally(test_data, test_lau_regions):
 
-    disagg_data = distribute_data_equally(test_data, "NUTS3", test_lau_regions)
+    disagg_data = distribute_data_equally(test_data, "NUTS3", test_lau_regions, 3)
 
     assert (
         disagg_data[disagg_data["region_code"] == "DE142_08416018"]["value"].item()
