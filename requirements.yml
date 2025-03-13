@@ -19,3 +19,5 @@ dependencies:
   - geopandas
   - seaborn
   - cmcrameri
+  - plotly
+  - python-kaleido=0.2.1

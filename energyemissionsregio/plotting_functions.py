@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.colors import SymLogNorm
+from matplotlib.colors import SymLogNorm, Normalize
 from cmcrameri import cm
 
 
@@ -363,12 +363,11 @@ def plot_validation_data(
     true_df,
     disagg_df,
     gdf,
-    de_total,
-    es_total,
     mae_de,
     mae_es,
     target_var_unit,
     true_data_source,
+    norm,
     save_path,
 ):
 
@@ -383,15 +382,48 @@ def plot_validation_data(
         gdf, disagg_df, left_on="code", right_on="region_code", how="left"
     )
 
+    deviation_df = pd.merge(
+        true_df, disagg_df, on="region_code", suffixes=["_true", "_disagg"]
+    )
+    deviation_df["diff"] = abs(
+        deviation_df["value_disagg"] - deviation_df["value_true"]
+    )
+
+    min_deviation_de = (
+        deviation_df[deviation_df["region_code"].str.startswith("DE")]["diff"]
+        .min()
+        .round(2)
+    )
+    max_deviation_de = (
+        deviation_df[deviation_df["region_code"].str.startswith("DE")]["diff"]
+        .max()
+        .round(2)
+    )
+
+    min_deviation_es = (
+        deviation_df[deviation_df["region_code"].str.startswith("ES")]["diff"]
+        .min()
+        .round(2)
+    )
+    max_deviation_es = (
+        deviation_df[deviation_df["region_code"].str.startswith("ES")]["diff"]
+        .max()
+        .round(2)
+    )
+
     vmin = np.minimum(true_df["value"].min(), disagg_df["value"].min())
     vmax = np.maximum(true_df["value"].max(), disagg_df["value"].max())
 
-    norm = SymLogNorm(linthresh=0.1, vmin=vmin, vmax=vmax)
+    if norm == "linear":
+        norm = norm = Normalize(vmin=vmin, vmax=vmax)
+    else:
+        norm = SymLogNorm(linthresh=0.1, vmin=vmin, vmax=vmax)
 
     # Germany - True --------
     ax1 = plt.subplot(gs[:1, :1])
 
     merged_df_de = merged_df_true[merged_df_true["code"].str.startswith("DE")]
+    de_total = merged_df_de["value"].sum().round(2)
 
     merged_df_de.plot(
         column="value",
@@ -417,6 +449,7 @@ def plot_validation_data(
     ax2 = plt.subplot(gs[:1, 1:])
 
     merged_df_es = merged_df_true[merged_df_true["code"].str.startswith("ES")]
+    es_total = merged_df_es["value"].sum().round(2)
 
     merged_df_es.plot(
         column="value",
@@ -452,7 +485,10 @@ def plot_validation_data(
     ax3.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
     ax3.set_ylabel("Disaggregated values", fontsize=15)
-    ax3.set_xlabel(f"RMSE = {mae_de} {target_var_unit}", fontsize=15)
+    ax3.set_xlabel(
+        f"RMSE = {mae_de} {target_var_unit}\nMin deviation = {min_deviation_de} {target_var_unit}\nMax deviation = {max_deviation_de} {target_var_unit}",
+        fontsize=13,
+    )
 
     # Spain - Disagg --------
     ax4 = plt.subplot(gs[1:, 1:])
@@ -473,7 +509,10 @@ def plot_validation_data(
     ax4.spines["bottom"].set_visible(False)
     ax4.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
-    ax4.set_xlabel(f"RMSE = {mae_es} {target_var_unit}", fontsize=15)
+    ax4.set_xlabel(
+        f"RMSE = {mae_es} {target_var_unit}\nMin deviation = {min_deviation_es} {target_var_unit}\nMax deviation = {max_deviation_es} {target_var_unit}",
+        fontsize=13,
+    )
 
     # legend
     # Add colorbar legend outside the plot
@@ -484,12 +523,12 @@ def plot_validation_data(
         width="60%",
         height="20%",
         loc="lower center",
-        bbox_to_anchor=(0.1, 0.05, 0.9, 0.05),  # Adjust for position
+        bbox_to_anchor=(0.1, 0.05, 0.9, 0.04),  # Adjust for position
         bbox_transform=fig.transFigure,
         borderpad=0,
     )
     clb = fig.colorbar(sm, cax=axins, orientation="horizontal", shrink=0.8)
     clb.ax.tick_params(labelsize=15)
-    clb.ax.set_title(f"({target_var_unit})", fontsize=15)
+    clb.ax.set_title(f"({target_var_unit})", fontsize=13)
 
     plt.savefig(save_path, format="png", bbox_inches="tight", dpi=200)

@@ -109,6 +109,7 @@ units = {
     "ghg_emissions_from_fc_in_rail_transport": "Mt",
     "final_energy_consumption_in_wood_and_wood_products_industries": "MWh",
     "final_energy_consumption_in_agriculture_and_forestry": "MWh",
+    "gross_domestic_product": "million Euros",
 }
 
 confidence_level_mapping = {
