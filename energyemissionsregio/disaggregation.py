@@ -82,7 +82,8 @@ def perform_proxy_based_disaggregation(
     :param source_resolution: The original resolution of the target data
     :type source_resolution: str
 
-    :param proxy_confidence_level: The confidence level in the way the data is disaggregated
+    :param proxy_confidence_level: The confidence level in the way the data is disaggregated.
+                                    options = {4 : HIGH, 3 : MEDIUM, 2 : LOW, 1 : VERY LOW}
     :type proxy_confidence_level: int
 
     **Default arguments:**
